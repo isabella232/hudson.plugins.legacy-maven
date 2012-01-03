@@ -23,6 +23,7 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.Indenter;
 import hudson.Util;
+import hudson.XmlFile;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.BuildableItemWithBuildWrappers;
@@ -215,6 +216,8 @@ public class MavenModuleSet extends AbstractMavenProject<MavenModuleSet,MavenMod
      */
     private DescribableList<BuildWrapper,Descriptor<BuildWrapper>> buildWrappers =
         new DescribableList<BuildWrapper, Descriptor<BuildWrapper>>(this);
+    
+    private static final String LEGACY_MAVEN_GLOBAL_CONFIG_FILE = "legacy-maven-global-config.xml";
 
     public MavenModuleSet(String name) {
         this(Hudson.getInstance(),name);
@@ -813,6 +816,7 @@ public class MavenModuleSet extends AbstractMavenProject<MavenModuleSet,MavenMod
         resolveDependencies = req.hasParameter( "maven.resolveDependencies" );
         processPlugins = req.hasParameter( "maven.processPlugins" );
         mavenValidationLevel = NumberUtils.toInt( req.getParameter( "maven.validationLevel" ), -1 );
+
         reporters.rebuild(req,json,MavenReporters.getConfigurableList());
         publishers.rebuild(req,json,BuildStepDescriptor.filter(Publisher.all(),this.getClass()));
         buildWrappers.rebuild(req,json,BuildWrappers.getFor(this));
@@ -891,6 +895,20 @@ public class MavenModuleSet extends AbstractMavenProject<MavenModuleSet,MavenMod
             mavenValidationLevels.put( "LEVEL_MAVEN_3_1", ModelBuildingRequest.VALIDATION_LEVEL_MAVEN_3_1 );
             mavenValidationLevels.put( "LEVEL_STRICT", ModelBuildingRequest.VALIDATION_LEVEL_STRICT );
         }
+        
+        @Override
+        public XmlFile getConfigFile() {
+            File hudsonRoot = Hudson.getInstance().getRootDir();
+            File globalConfigFile = new File(hudsonRoot, LEGACY_MAVEN_GLOBAL_CONFIG_FILE);
+            
+            // For backward Compatibility
+            File oldGlobalConfigFile = new File(hudsonRoot, "hudson.maven.MavenModuleSet.xml");
+            if (oldGlobalConfigFile.exists()){
+                oldGlobalConfigFile.renameTo(globalConfigFile);
+            }
+            
+            return new XmlFile(globalConfigFile);
+        }       
         
         public String getGlobalMavenOpts() {
             return globalMavenOpts;
