@@ -21,13 +21,13 @@
     <groupId>org.eclipse.hudson.main</groupId>
     <artifactId>hudson</artifactId>
     <version>3.0.0</version>
-    <relativePath/>
+    <relativePath />
   </parent>
 
   <!-- TODO: Should really give these modules their own groupId -->
 
   <artifactId>hudson-maven-legacy</artifactId>
-  <version>3.0.0-SNAPSHOT</version>
+  <version>3.0.0</version>
   <packaging>pom</packaging>
   <name>Hudson :: Maven (legacy)</name>
   <description>Hudson Legacy Maven Integration</description>
