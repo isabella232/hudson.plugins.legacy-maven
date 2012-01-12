@@ -18,7 +18,7 @@
   <parent>
     <groupId>org.eclipse.hudson.main</groupId>
     <artifactId>hudson-maven-legacy</artifactId>
-    <version>3.0.0</version>
+    <version>3.0.1-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>maven3-agent</artifactId>
