@@ -48,7 +48,24 @@
     <dependency>
       <groupId>org.eclipse.hudson.main</groupId>
       <artifactId>hudson-core</artifactId>
-      <version>3.0.0</version>
+      <version>${hudson.core.version}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>hudson-cli</artifactId>
+          <groupId>org.eclipse.hudson.main</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>hudson-remoting</artifactId>
+          <groupId>org.eclipse.hudson.main</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    
+    <dependency>
+      <groupId>org.eclipse.hudson.main</groupId>
+      <artifactId>hudson-remoting</artifactId>
+      <version>${hudson.core.version}</version>
       <scope>provided</scope>
     </dependency>
 

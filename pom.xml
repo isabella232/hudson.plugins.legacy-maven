@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.eclipse.hudson.main</groupId>
     <artifactId>hudson</artifactId>
-    <version>3.0.0-M0</version>
+    <version>3.0.0-M0-1</version>
     <relativePath />
   </parent>
 
@@ -33,6 +33,7 @@
   <description>Hudson Legacy Maven Integration</description>
 
   <properties>
+    <hudson.core.version>3.0.0-M0-1</hudson.core.version>
     <mavenVersion>3.0.2</mavenVersion>
     <maven.version>${mavenVersion}</maven.version>
     <aetherVersion>${aether.version}</aetherVersion>
