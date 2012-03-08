@@ -23,8 +23,6 @@ import hudson.remoting.Callable;
 import java.io.File;
 import java.io.IOException;
 
-import org.kohsuke.stapler.framework.io.IOException2;
-
 /**
  * 
  * @author Olivier Lamy
@@ -51,7 +49,7 @@ public class MavenVersionCallable
         }
         catch ( MavenEmbedderException e )
         {
-            throw new IOException2( e );
+            throw new IOException( e );
         }
     }
 

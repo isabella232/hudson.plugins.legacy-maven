@@ -52,7 +52,6 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.util.Arrays;
 
 import org.eclipse.hudson.legacy.maven.plugin.ProcessCache.NewProcess;
-import org.kohsuke.stapler.framework.io.IOException2;
 
 /*******************************************************************************
  *
@@ -237,7 +236,7 @@ public abstract class AbstractMavenProcessFactory
                 // diagnose issue #659
                 JDK jdk = mms.getJDK();
                 if(jdk==null)
-                    throw new IOException2(mms.getDisplayName()+" is not configured with a JDK, but your PATH doesn't include Java",e);
+                    throw new IOException(mms.getDisplayName()+" is not configured with a JDK, but your PATH doesn't include Java",e);
             }
             throw e;
         }

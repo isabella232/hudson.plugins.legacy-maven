@@ -19,12 +19,8 @@ package org.eclipse.hudson.legacy.maven.plugin;
 import hudson.model.Descriptor;
 import hudson.model.Describable;
 import hudson.model.Hudson;
-import org.apache.commons.jelly.JellyException;
 import org.eclipse.hudson.legacy.maven.plugin.reporters.MavenArtifactArchiver;
-import org.kohsuke.stapler.MetaClass;
 import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.WebApp;
-import org.kohsuke.stapler.jelly.JellyClassTearOff;
 
 import java.util.Collection;
 
@@ -81,13 +77,7 @@ public abstract class MavenReporterDescriptor extends Descriptor<MavenReporter> 
      * Returns true if this descriptor has <tt>config.jelly</tt>.
      */
     public final boolean hasConfigScreen() {
-        MetaClass c = WebApp.getCurrent().getMetaClass(getClass());
-        try {
-            JellyClassTearOff tearOff = c.loadTearOff(JellyClassTearOff.class);
-            return tearOff.findScript(getConfigPage())!=null;
-        } catch(JellyException e) {
-            return false;
-        }
+      return true;
     }
 
     /**
