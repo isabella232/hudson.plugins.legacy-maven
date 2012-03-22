@@ -1,13 +1,15 @@
 /*******************************************************************************
  *
- * Copyright (c) 2004-2010 Oracle Corporation.
+ * Copyright (c) 2004-2009 Oracle Corporation.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  *
- * Contributors:
+ * Contributors: 
+*
+*    Olivier Lamy
  *     
  *
  *******************************************************************************/ 
@@ -15,20 +17,65 @@
 package hudson.maven;
 
 import hudson.model.BuildListener;
+import hudson.model.Hudson;
+import hudson.model.Result;
+import hudson.remoting.DelegatingCallable;
 
+import java.io.IOException;
+import java.text.NumberFormat;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Exists solely for backward compatibility
- * @author Winston Prakash
- * @see org.eclipse.hudson.legacy.maven.plugin.AbstractMavenBuilder
+ * @author Olivier Lamy
+ *
  */
-public abstract class AbstractMavenBuilder extends org.eclipse.hudson.legacy.maven.plugin.AbstractMavenBuilder {
+public abstract class AbstractMavenBuilder implements DelegatingCallable<Result,IOException> {
+    
+    /**
+     * Goals to be executed in this Maven execution.
+     */
+    protected final List<String> goals;
+    /**
+     * Hudson-defined system properties. These will be made available to Maven,
+     * and accessible as if they are specified as -Dkey=value
+     */
+    protected final Map<String,String> systemProps;
+    /**
+     * Where error messages and so on are sent.
+     */
+    protected final BuildListener listener;
+    
+    protected AbstractMavenBuilder(BuildListener listener, List<String> goals, Map<String, String> systemProps) {
+        this.listener = listener;
+        this.goals = goals;
+        this.systemProps = systemProps;
+    }
+    
+    protected String formatArgs(List<String> args) {
+        StringBuilder buf = new StringBuilder("Executing Maven: ");
+        for (String arg : args) {
+            final String argPassword = "-Dpassword=" ;
+            String filteredArg = arg ;
+            // check if current arg is password arg. Then replace password by ***** 
+            if (arg.startsWith(argPassword)) {
+                filteredArg=argPassword+"*********";
+            }
+            buf.append(' ').append(filteredArg);
+        }
+        return buf.toString();
+    }    
+    
+    
 
-	protected AbstractMavenBuilder(BuildListener listener, List<String> goals,
-			Map<String, String> systemProps) {
-		super(listener, goals, systemProps);
-	}
-      
+
+    protected String format(NumberFormat n, long nanoTime) {
+        return n.format(nanoTime/1000000);
+    }
+
+    // since reporters might be from plugins, use the uberjar to resolve them.
+    public ClassLoader getClassLoader() {
+        return Hudson.getInstance().getPluginManager().uberClassLoader;
+    }    
+    
 }

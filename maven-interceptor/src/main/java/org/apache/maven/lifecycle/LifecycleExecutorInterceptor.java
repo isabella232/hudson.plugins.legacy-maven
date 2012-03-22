@@ -22,7 +22,7 @@ import org.apache.maven.execution.ReactorManager;
 import org.apache.maven.monitor.event.EventDispatcher;
 import org.apache.maven.monitor.event.EventMonitor;
 import org.apache.maven.monitor.event.MavenEvents;
-import org.eclipse.hudson.legacy.maven.interceptor.AbortException;
+import hudson.maven.agent.AbortException;
 
 import java.io.IOException;
 
