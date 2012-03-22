@@ -1,27 +1,26 @@
-/*******************************************************************************
+/**
+ * *****************************************************************************
  *
  * Copyright (c) 2004-2010 Oracle Corporation.
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License v1.0 which
+ * accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  *
- * Contributors: 
+ * Contributors:
  *
- *    Kohsuke Kawaguchi, id:cactusman, Seiji Sogabe
- *     
+ * Kohsuke Kawaguchi, id:cactusman, Seiji Sogabe
  *
- *******************************************************************************/ 
-
+ *
+ ******************************************************************************
+ */
 package hudson.maven;
 
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.Util;
 
-import hudson.maven.MavenEmbedder;
-import hudson.maven.MavenEmbedderException;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
@@ -57,299 +56,284 @@ import org.kohsuke.stapler.StaplerRequest;
 /**
  * {@link Publisher} for {@link MavenModuleSetBuild} to deploy artifacts after a
  * build is fully succeeded.
- * 
+ *
  * @author Kohsuke Kawaguchi
  * @since 1.191
  */
 public class RedeployPublisher extends Recorder {
-	/**
-	 * Repository ID. This is matched up with <tt>~/.m2/settings.xml</tt> for
-	 * authentication related information.
-	 */
-	public final String id;
-	/**
-	 * Repository URL to deploy artifacts to.
-	 */
-	public final String url;
-	public final boolean uniqueVersion;
-	public final boolean evenIfUnstable;
 
-	/**
-	 * For backward compatibility
-	 */
-	public RedeployPublisher(String id, String url, boolean uniqueVersion) {
-		this(id, url, uniqueVersion, false);
-	}
+    /**
+* Repository ID. This is matched up with <tt>~/.m2/settings.xml</tt> for authentication related information.
+*/
+    public final String id;
+    /**
+* Repository URL to deploy artifacts to.
+*/
+    public final String url;
+    public final boolean uniqueVersion;
+    public final boolean evenIfUnstable;
 
-	/**
-	 * @since 1.347
-	 */
-	@DataBoundConstructor
-	public RedeployPublisher(String id, String url, boolean uniqueVersion,
-			boolean evenIfUnstable) {
-		this.id = id;
-		this.url = Util.fixEmptyAndTrim(url);
-		this.uniqueVersion = uniqueVersion;
-		this.evenIfUnstable = evenIfUnstable;
-	}
+    /**
+* For backward compatibility
+*/
+    public RedeployPublisher(String id, String url, boolean uniqueVersion) {
+     this(id, url, uniqueVersion, false);
+    }
+    
+    /**
+* @since 1.347
+*/
+    @DataBoundConstructor
+    public RedeployPublisher(String id, String url, boolean uniqueVersion, boolean evenIfUnstable) {
+        this.id = id;
+        this.url = Util.fixEmptyAndTrim(url);
+        this.uniqueVersion = uniqueVersion;
+        this.evenIfUnstable = evenIfUnstable;
+    }
 
-	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
-			BuildListener listener) throws InterruptedException, IOException {
-		if (build.getResult().isWorseThan(getTreshold()))
-			return true; // build failed. Don't publish
+    public boolean perform(AbstractBuild<?,?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+        if(build.getResult().isWorseThan(getTreshold()))
+            return true; // build failed. Don't publish
 
-		if (url == null) {
-			listener.getLogger().println("No Repository URL is specified.");
-			build.setResult(Result.FAILURE);
-			return true;
-		}
+        if (url==null) {
+            listener.getLogger().println("No Repository URL is specified.");
+            build.setResult(Result.FAILURE);
+            return true;
+        }
 
-		List<MavenAbstractArtifactRecord> mars = getActions(build, listener);
-		if (mars == null || mars.isEmpty()) {
-			listener.getLogger().println(
-					"No artifacts are recorded. Is this a Maven project?");
-			build.setResult(Result.FAILURE);
-			return true;
-		}
+        List<MavenAbstractArtifactRecord> mars = getActions( build, listener );
+        if(mars==null || mars.isEmpty()) {
+            listener.getLogger().println("No artifacts are recorded. Is this a Maven project?");
+            build.setResult(Result.FAILURE);
+            return true;
+        }
 
-		listener.getLogger().println("Deploying artifacts to " + url);
-		try {
+        listener.getLogger().println("Deploying artifacts to "+url);
+        try {
+            
+            MavenEmbedder embedder = MavenUtil.createEmbedder(listener,build);
+            ArtifactRepositoryLayout layout =
+                (ArtifactRepositoryLayout) embedder.lookup( ArtifactRepositoryLayout.ROLE,"default");
+            ArtifactRepositoryFactory factory =
+                (ArtifactRepositoryFactory) embedder.lookup(ArtifactRepositoryFactory.ROLE);
 
-			MavenEmbedder embedder = MavenUtil.createEmbedder(listener, build);
-			ArtifactRepositoryLayout layout = (ArtifactRepositoryLayout) embedder
-					.lookup(ArtifactRepositoryLayout.ROLE, "default");
-			ArtifactRepositoryFactory factory = (ArtifactRepositoryFactory) embedder
-					.lookup(ArtifactRepositoryFactory.ROLE);
+            final ArtifactRepository repository = factory.createDeploymentArtifactRepository(
+                    id, url, layout, uniqueVersion);
+            WrappedArtifactRepository repo = new WrappedArtifactRepository(repository,uniqueVersion);
+            for (MavenAbstractArtifactRecord mar : mars)
+                mar.deploy(embedder,repo,listener);
 
-			final ArtifactRepository repository = factory
-					.createDeploymentArtifactRepository(id, url, layout,
-							uniqueVersion);
-			WrappedArtifactRepository repo = new WrappedArtifactRepository(
-					repository, uniqueVersion);
-			for (MavenAbstractArtifactRecord mar : mars)
-				mar.deploy(embedder, repo, listener);
+            return true;
+        } catch (MavenEmbedderException e) {
+            e.printStackTrace(listener.error(e.getMessage()));
+        } catch (ComponentLookupException e) {
+            e.printStackTrace(listener.error(e.getMessage()));
+        } catch (ArtifactDeploymentException e) {
+            e.printStackTrace(listener.error(e.getMessage()));
+        }
+        // failed
+        build.setResult(Result.FAILURE);
+        return true;
+    }
 
-			return true;
-		} catch (MavenEmbedderException e) {
-			e.printStackTrace(listener.error(e.getMessage()));
-		} catch (ComponentLookupException e) {
-			e.printStackTrace(listener.error(e.getMessage()));
-		} catch (ArtifactDeploymentException e) {
-			e.printStackTrace(listener.error(e.getMessage()));
-		}
-		// failed
-		build.setResult(Result.FAILURE);
-		return true;
-	}
 
-	/**
-	 * Obtains the {@link MavenAbstractArtifactRecord} that we'll work on.
-	 * <p>
-	 * This allows promoted-builds plugin to reuse the code for delayed
-	 * deployment.
-	 */
-	protected MavenAbstractArtifactRecord getAction(AbstractBuild<?, ?> build) {
-		return build.getAction(MavenAbstractArtifactRecord.class);
-	}
+    
+    /**
+* Obtains the {@link MavenAbstractArtifactRecord} that we'll work on.
+* <p>
+* This allows promoted-builds plugin to reuse the code for delayed deployment.
+*/
+    protected MavenAbstractArtifactRecord getAction(AbstractBuild<?, ?> build) {
+        return build.getAction(MavenAbstractArtifactRecord.class);
+    }
+    
+    protected List<MavenAbstractArtifactRecord> getActions(AbstractBuild<?, ?> build, BuildListener listener) {
+        List<MavenAbstractArtifactRecord> actions = new ArrayList<MavenAbstractArtifactRecord>();
+        if (!(build instanceof MavenModuleSetBuild)) {
+            return actions;
+        }
+        for (Entry<MavenModule, MavenBuild> e : ((MavenModuleSetBuild)build).getModuleLastBuilds().entrySet()) {
+            MavenAbstractArtifactRecord a = e.getValue().getAction( MavenAbstractArtifactRecord.class );
+            if (a == null) {
+                listener.getLogger().println("No artifacts are recorded for module" + e.getKey().getName() + ". Is this a Maven project?");
+            } else {
+                actions.add( a );
+            }
+            
+        }
+        return actions;
+    }
 
-	protected List<MavenAbstractArtifactRecord> getActions(
-			AbstractBuild<?, ?> build, BuildListener listener) {
-		List<MavenAbstractArtifactRecord> actions = new ArrayList<MavenAbstractArtifactRecord>();
-		if (!(build instanceof MavenModuleSetBuild)) {
-			return actions;
-		}
-		for (Entry<MavenModule, MavenBuild> e : ((MavenModuleSetBuild) build)
-				.getModuleLastBuilds().entrySet()) {
-			MavenAbstractArtifactRecord a = e.getValue().getAction(
-					MavenAbstractArtifactRecord.class);
-			if (a == null) {
-				listener.getLogger().println(
-						"No artifacts are recorded for module"
-								+ e.getKey().getName()
-								+ ". Is this a Maven project?");
-			} else {
-				actions.add(a);
-			}
+    public BuildStepMonitor getRequiredMonitorService() {
+        return BuildStepMonitor.NONE;
+    }
 
-		}
-		return actions;
-	}
+    protected Result getTreshold() {
+        if (evenIfUnstable) {
+            return Result.UNSTABLE;
+        } else {
+            return Result.SUCCESS;
+        }
+    }
+    
+    @Extension
+    public static class DescriptorImpl extends BuildStepDescriptor<Publisher> {
+        public DescriptorImpl() {
+        }
 
-	public BuildStepMonitor getRequiredMonitorService() {
-		return BuildStepMonitor.NONE;
-	}
+        /**
+* @deprecated as of 1.290
+* Use the default constructor.
+*/
+        protected DescriptorImpl(Class<? extends Publisher> clazz) {
+            super(clazz);
+        }
 
-	protected Result getTreshold() {
-		if (evenIfUnstable) {
-			return Result.UNSTABLE;
-		} else {
-			return Result.SUCCESS;
-		}
-	}
+        public boolean isApplicable(Class<? extends AbstractProject> jobType) {
+            return jobType==MavenModuleSet.class;
+        }
 
-	@Extension
-	public static class DescriptorImpl extends BuildStepDescriptor<Publisher> {
-		public DescriptorImpl() {
-		}
+        public RedeployPublisher newInstance(StaplerRequest req, JSONObject formData) throws FormException {
+            return req.bindJSON(RedeployPublisher.class,formData);
+        }
 
-		/**
-		 * @deprecated as of 1.290 Use the default constructor.
-		 */
-		protected DescriptorImpl(Class<? extends Publisher> clazz) {
-			super(clazz);
-		}
+        public String getDisplayName() {
+            return Messages.RedeployPublisher_getDisplayName();
+        }
 
-		public boolean isApplicable(Class<? extends AbstractProject> jobType) {
-			return jobType == MavenModuleSet.class;
-		}
+        public boolean showEvenIfUnstableOption() {
+            // little hack to avoid showing this option on the redeploy action's screen
+            return true;
+        }
 
-		public RedeployPublisher newInstance(StaplerRequest req,
-				JSONObject formData) throws FormException {
-			return req.bindJSON(RedeployPublisher.class, formData);
-		}
+        public FormValidation doCheckUrl(@QueryParameter String url) {
+            String fixedUrl = hudson.Util.fixEmptyAndTrim(url);
+            if (fixedUrl==null)
+                return FormValidation.error(Messages.RedeployPublisher_RepositoryURL_Mandatory());
 
-		public String getDisplayName() {
-			return Messages.RedeployPublisher_getDisplayName();
-		}
-
-		public boolean showEvenIfUnstableOption() {
-			// little work around to avoid showing this option on the redeploy action's
-			// screen
-			return true;
-		}
-
-		public FormValidation doCheckUrl(@QueryParameter String url) {
-			String fixedUrl = hudson.Util.fixEmptyAndTrim(url);
-			if (fixedUrl == null)
-				return FormValidation.error(Messages
-						.RedeployPublisher_RepositoryURL_Mandatory());
-
-			return FormValidation.ok();
-		}
-	}
-
-	// ---------------------------------------------
-
-	public static class WrappedArtifactRepository implements ArtifactRepository {
-		private ArtifactRepository artifactRepository;
-		private boolean uniqueVersion;
-
-		public WrappedArtifactRepository(ArtifactRepository artifactRepository,
-				boolean uniqueVersion) {
-			this.artifactRepository = artifactRepository;
-			this.uniqueVersion = uniqueVersion;
-		}
-
-		public String pathOf(Artifact artifact) {
-			return artifactRepository.pathOf(artifact);
-		}
-
-		public String pathOfRemoteRepositoryMetadata(
-				ArtifactMetadata artifactMetadata) {
-			return artifactRepository
-					.pathOfRemoteRepositoryMetadata(artifactMetadata);
-		}
-
-		public String pathOfLocalRepositoryMetadata(ArtifactMetadata metadata,
-				ArtifactRepository repository) {
-			return artifactRepository.pathOfLocalRepositoryMetadata(metadata,
-					repository);
-		}
-
-		public String getUrl() {
-			return artifactRepository.getUrl();
-		}
-
-		public void setUrl(String url) {
-			artifactRepository.setUrl(url);
-		}
-
-		public String getBasedir() {
-			return artifactRepository.getBasedir();
-		}
-
-		public String getProtocol() {
-			return artifactRepository.getProtocol();
-		}
-
-		public String getId() {
-			return artifactRepository.getId();
-		}
-
-		public void setId(String id) {
-			artifactRepository.setId(id);
-		}
-
-		public ArtifactRepositoryPolicy getSnapshots() {
-			return artifactRepository.getSnapshots();
-		}
-
-		public void setSnapshotUpdatePolicy(ArtifactRepositoryPolicy policy) {
-			artifactRepository.setSnapshotUpdatePolicy(policy);
-		}
-
-		public ArtifactRepositoryPolicy getReleases() {
-			return artifactRepository.getReleases();
-		}
-
-		public void setReleaseUpdatePolicy(ArtifactRepositoryPolicy policy) {
-			artifactRepository.setReleaseUpdatePolicy(policy);
-		}
-
-		public ArtifactRepositoryLayout getLayout() {
-			return artifactRepository.getLayout();
-		}
-
-		public void setLayout(ArtifactRepositoryLayout layout) {
-			artifactRepository.setLayout(layout);
-		}
-
-		public String getKey() {
-			return artifactRepository.getKey();
-		}
-
-		public boolean isUniqueVersion() {
-			return this.uniqueVersion;
-		}
-
-		public void setUniqueVersion(boolean uniqueVersion) {
-			this.uniqueVersion = uniqueVersion;
-		}
-
-		public boolean isBlacklisted() {
-			return artifactRepository.isBlacklisted();
-		}
-
-		public void setBlacklisted(boolean blackListed) {
-			artifactRepository.setBlacklisted(blackListed);
-		}
-
-		public Artifact find(Artifact artifact) {
-			return artifactRepository.find(artifact);
-		}
-
-		public List<String> findVersions(Artifact artifact) {
-			return artifactRepository.findVersions(artifact);
-		}
-
-		public boolean isProjectAware() {
-			return artifactRepository.isProjectAware();
-		}
-
-		public void setAuthentication(Authentication authentication) {
-			artifactRepository.setAuthentication(authentication);
-		}
-
-		public Authentication getAuthentication() {
-			return artifactRepository.getAuthentication();
-		}
-
-		public void setProxy(Proxy proxy) {
-			artifactRepository.setProxy(proxy);
-		}
-
-		public Proxy getProxy() {
-			return artifactRepository.getProxy();
-		}
-	}
+            return FormValidation.ok();
+        }
+    }
+    
+    //---------------------------------------------
+    
+    
+    public static class WrappedArtifactRepository implements ArtifactRepository {
+        private ArtifactRepository artifactRepository;
+        private boolean uniqueVersion;
+        public WrappedArtifactRepository (ArtifactRepository artifactRepository, boolean uniqueVersion)
+        {
+            this.artifactRepository = artifactRepository;
+            this.uniqueVersion = uniqueVersion;
+        }
+        public String pathOf( Artifact artifact )
+        {
+            return artifactRepository.pathOf( artifact );
+        }
+        public String pathOfRemoteRepositoryMetadata( ArtifactMetadata artifactMetadata )
+        {
+            return artifactRepository.pathOfRemoteRepositoryMetadata( artifactMetadata );
+        }
+        public String pathOfLocalRepositoryMetadata( ArtifactMetadata metadata, ArtifactRepository repository )
+        {
+            return artifactRepository.pathOfLocalRepositoryMetadata( metadata, repository );
+        }
+        public String getUrl()
+        {
+            return artifactRepository.getUrl();
+        }
+        public void setUrl( String url )
+        {
+            artifactRepository.setUrl( url );
+        }
+        public String getBasedir()
+        {
+            return artifactRepository.getBasedir();
+        }
+        public String getProtocol()
+        {
+            return artifactRepository.getProtocol();
+        }
+        public String getId()
+        {
+            return artifactRepository.getId();
+        }
+        public void setId( String id )
+        {
+            artifactRepository.setId( id );
+        }
+        public ArtifactRepositoryPolicy getSnapshots()
+        {
+            return artifactRepository.getSnapshots();
+        }
+        public void setSnapshotUpdatePolicy( ArtifactRepositoryPolicy policy )
+        {
+            artifactRepository.setSnapshotUpdatePolicy( policy );
+        }
+        public ArtifactRepositoryPolicy getReleases()
+        {
+            return artifactRepository.getReleases();
+        }
+        public void setReleaseUpdatePolicy( ArtifactRepositoryPolicy policy )
+        {
+            artifactRepository.setReleaseUpdatePolicy( policy );
+        }
+        public ArtifactRepositoryLayout getLayout()
+        {
+            return artifactRepository.getLayout();
+        }
+        public void setLayout( ArtifactRepositoryLayout layout )
+        {
+            artifactRepository.setLayout( layout );
+        }
+        public String getKey()
+        {
+            return artifactRepository.getKey();
+        }
+        public boolean isUniqueVersion()
+        {
+            return this.uniqueVersion;
+        }
+        
+        public void setUniqueVersion(boolean uniqueVersion) {
+            this.uniqueVersion = uniqueVersion;
+        }
+        
+        public boolean isBlacklisted()
+        {
+            return artifactRepository.isBlacklisted();
+        }
+        public void setBlacklisted( boolean blackListed )
+        {
+            artifactRepository.setBlacklisted( blackListed );
+        }
+        public Artifact find( Artifact artifact )
+        {
+            return artifactRepository.find( artifact );
+        }
+        public List<String> findVersions( Artifact artifact )
+        {
+            return artifactRepository.findVersions( artifact );
+        }
+        public boolean isProjectAware()
+        {
+            return artifactRepository.isProjectAware();
+        }
+        public void setAuthentication( Authentication authentication )
+        {
+            artifactRepository.setAuthentication( authentication );
+        }
+        public Authentication getAuthentication()
+        {
+            return artifactRepository.getAuthentication();
+        }
+        public void setProxy( Proxy proxy )
+        {
+            artifactRepository.setProxy( proxy );
+        }
+        public Proxy getProxy()
+        {
+            return artifactRepository.getProxy();
+        }
+    } 
 }

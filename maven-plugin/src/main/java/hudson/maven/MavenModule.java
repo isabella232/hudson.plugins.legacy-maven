@@ -60,7 +60,7 @@ import java.util.logging.Logger;
  * 
  * @author Kohsuke Kawaguchi
  */
-public class MavenModule extends AbstractMavenProject<MavenModule,MavenBuild> implements Saveable {
+public final class MavenModule extends AbstractMavenProject<MavenModule,MavenBuild> implements Saveable {
     private DescribableList<MavenReporter,Descriptor<MavenReporter>> reporters =
         new DescribableList<MavenReporter,Descriptor<MavenReporter>>(this);
 
@@ -115,7 +115,7 @@ public class MavenModule extends AbstractMavenProject<MavenModule,MavenBuild> im
 
     private PomInfo pomInfo;
 
-    protected MavenModule(MavenModuleSet parent, PomInfo pom, int firstBuildNumber) throws IOException {
+    /*package*/ MavenModule(MavenModuleSet parent, PomInfo pom, int firstBuildNumber) throws IOException {
         super(parent, pom.name.toFileSystemName());
         reconfigure(pom);
         updateNextBuildNumber(firstBuildNumber);

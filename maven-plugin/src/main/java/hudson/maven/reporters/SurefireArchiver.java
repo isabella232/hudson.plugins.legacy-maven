@@ -165,7 +165,7 @@ public class SurefireArchiver extends MavenReporter {
     /**
      * Part of the serialization data attached to {@link MavenBuild}.
      */
-    public static final class FactoryImpl implements MavenProjectActionBuilder {
+    static final class FactoryImpl implements MavenProjectActionBuilder {
         public Collection<? extends Action> getProjectActions(MavenModule module) {
             return Collections.singleton(new TestResultProjectAction(module));
         }

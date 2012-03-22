@@ -23,6 +23,10 @@ import hudson.maven.reporters.MavenArtifactArchiver;
 import org.kohsuke.stapler.StaplerRequest;
 
 import java.util.Collection;
+import org.apache.commons.jelly.JellyException;
+import org.kohsuke.stapler.MetaClass;
+import org.kohsuke.stapler.WebApp;
+import org.kohsuke.stapler.jelly.JellyClassTearOff;
 
 /**
  * {@link Descriptor} for {@link MavenReporter}.
@@ -77,7 +81,13 @@ public abstract class MavenReporterDescriptor extends Descriptor<MavenReporter> 
      * Returns true if this descriptor has <tt>config.jelly</tt>.
      */
     public final boolean hasConfigScreen() {
-      return true;
+      MetaClass c = WebApp.getCurrent().getMetaClass(getClass());
+        try {
+            JellyClassTearOff tearOff = c.loadTearOff(JellyClassTearOff.class);
+            return tearOff.findScript(getConfigPage())!=null;
+        } catch(JellyException e) {
+            return false;
+        }
     }
 
     /**

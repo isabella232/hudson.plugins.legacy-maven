@@ -44,7 +44,7 @@ import org.kohsuke.stapler.Stapler;
  *
  * @author Kohsuke Kawaguchi
  */
-public class ExecutedMojo implements Serializable {
+public final class ExecutedMojo implements Serializable {
     /**
      * Plugin group ID.
      */

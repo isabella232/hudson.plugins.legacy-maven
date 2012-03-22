@@ -31,7 +31,7 @@ import org.codehaus.plexus.logging.console.ConsoleLogger;
  * 
  * @author Kohsuke Kawaguchi
  */
-public class EmbedderLoggerImpl extends MavenLoggerManager {
+public final class EmbedderLoggerImpl extends MavenLoggerManager {
     private final PrintStream logger;
 
     public EmbedderLoggerImpl(TaskListener listener, int threshold) {

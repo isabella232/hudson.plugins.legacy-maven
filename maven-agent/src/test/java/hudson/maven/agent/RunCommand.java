@@ -23,7 +23,6 @@ import org.apache.maven.plugin.Mojo;
 import org.apache.maven.reporting.MavenReport;
 import org.codehaus.plexus.configuration.PlexusConfiguration;
 import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluator;
-import hudson.maven.agent.Main;
 
 import java.io.IOException;
 

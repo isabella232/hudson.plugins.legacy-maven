@@ -31,7 +31,7 @@ import hudson.Functions;
  * @author Kohsuke Kawaguchi
  * @see ModuleName
  */
-public class ModuleDependency implements Serializable {
+public final class ModuleDependency implements Serializable {
     public final String groupId;
     public final String artifactId;
     public final String version;

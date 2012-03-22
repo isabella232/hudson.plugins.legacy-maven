@@ -94,7 +94,7 @@ import org.kohsuke.stapler.export.Exported;
  *
  * @author Kohsuke Kawaguchi
  */
-public class MavenModuleSet extends AbstractMavenProject<MavenModuleSet,MavenModuleSetBuild> implements TopLevelItem, ItemGroup<MavenModule>, SCMedItem, Saveable, BuildableItemWithBuildWrappers {
+public final class MavenModuleSet extends AbstractMavenProject<MavenModuleSet,MavenModuleSetBuild> implements TopLevelItem, ItemGroup<MavenModule>, SCMedItem, Saveable, BuildableItemWithBuildWrappers {
     /**
      * All {@link MavenModule}s, keyed by their {@link MavenModule#getModuleName()} module name}s.
      */
@@ -216,8 +216,6 @@ public class MavenModuleSet extends AbstractMavenProject<MavenModuleSet,MavenMod
      */
     private DescribableList<BuildWrapper,Descriptor<BuildWrapper>> buildWrappers =
         new DescribableList<BuildWrapper, Descriptor<BuildWrapper>>(this);
-    
-    private static final String LEGACY_MAVEN_GLOBAL_CONFIG_FILE = "legacy-maven-global-config.xml";
 
     public MavenModuleSet(String name) {
         this(Hudson.getInstance(),name);
@@ -895,20 +893,6 @@ public class MavenModuleSet extends AbstractMavenProject<MavenModuleSet,MavenMod
             mavenValidationLevels.put( "LEVEL_MAVEN_3_1", ModelBuildingRequest.VALIDATION_LEVEL_MAVEN_3_1 );
             mavenValidationLevels.put( "LEVEL_STRICT", ModelBuildingRequest.VALIDATION_LEVEL_STRICT );
         }
-        
-        @Override
-        public XmlFile getConfigFile() {
-            File hudsonRoot = Hudson.getInstance().getRootDir();
-            File globalConfigFile = new File(hudsonRoot, LEGACY_MAVEN_GLOBAL_CONFIG_FILE);
-            
-            // For backward Compatibility
-            File oldGlobalConfigFile = new File(hudsonRoot, "hudson.maven.MavenModuleSet.xml");
-            if (oldGlobalConfigFile.exists()){
-                oldGlobalConfigFile.renameTo(globalConfigFile);
-            }
-            
-            return new XmlFile(globalConfigFile);
-        }       
         
         public String getGlobalMavenOpts() {
             return globalMavenOpts;

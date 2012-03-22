@@ -16,17 +16,12 @@
 
 package hudson.maven;
 
-import hudson.maven.AbstractMavenBuild;
 import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.FilePath.FileCallable;
 import hudson.Launcher;
 import hudson.Util;
-import hudson.maven.MavenEmbedder;
-import hudson.maven.MavenEmbedderException;
-import hudson.maven.MavenInformation;
-import hudson.maven.ReactorReader;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.Build;
@@ -617,8 +612,30 @@ public class MavenModuleSetBuild extends AbstractMavenBuild<MavenModuleSet,Maven
                                 margs.add("-s").add(wsSettings.getRemote());
                             }
                         }
+                        
+                        final List<MavenArgumentInterceptorAction> argInterceptors = this.getBuild().getActions(MavenArgumentInterceptorAction.class);
+                        
+	                // find the correct maven goals and options, there might by an action overruling the defaults
+                        String goals = project.getGoals(); // default
+                        for (MavenArgumentInterceptorAction mavenArgInterceptor : argInterceptors) {
+                            final String goalsAndOptions = mavenArgInterceptor.getGoalsAndOptions((MavenModuleSetBuild) this.getBuild());
+                            if (StringUtils.isNotBlank(goalsAndOptions)) {
+                                goals = goalsAndOptions;
+                                // only one interceptor is allowed to overwrite the whole "goals and options" string
+                                break;
+                            }
+                        }
+                        margs.addTokenized(envVars.expand(goals));
 
-                        margs.addTokenized(envVars.expand(project.getGoals()));
+                        // enable the interceptors to change the whole command argument list
+                        // all available interceptors are allowed to modify the argument list
+                        for (MavenArgumentInterceptorAction mavenArgInterceptor : argInterceptors) {
+                            final ArgumentListBuilder newMargs = mavenArgInterceptor.intercept(margs, (MavenModuleSetBuild) this.getBuild());
+                            if (newMargs != null) {
+                                margs = newMargs;
+                            }
+                        }
+                        
                         if (maven3orLater)
                         {   
                             
