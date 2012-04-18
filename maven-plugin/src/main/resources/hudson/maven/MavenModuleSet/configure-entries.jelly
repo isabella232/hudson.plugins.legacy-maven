@@ -25,7 +25,7 @@
   <p:config-trigger>
     <!-- setting to ignore upstream changes is done as a pseudo-trigger -->
     <f:optionalBlock name="maven.triggerByDependency"
-        help="/plugin/maven-plugin/ignore-upstrem-changes.html"
+        help="/plugin/legacy-maven-plugin/ignore-upstrem-changes.html"
         title="${%Build whenever a SNAPSHOT dependency is built}"
         checked="${h.defaultToTrue(!it.ignoreUpstremChanges())}" />
     <p:config-upstream-pseudo-trigger />
@@ -52,19 +52,19 @@
         </select>
       </f:entry>
     </j:if>
-    <f:entry title="${%Root POM}" help="/plugin/maven-plugin/root-pom.html">
+    <f:entry title="${%Root POM}" help="/plugin/legacy-maven-plugin/root-pom.html">
       <f:textbox name="rootPOM" value="${it.rootPOM}"
               checkUrl="'checkFileInWorkspace?value='+escape(this.value)" />
     </f:entry>
-    <f:entry title="${%Goals and options}" help="/plugin/maven-plugin/goals.html">
+    <f:entry title="${%Goals and options}" help="/plugin/legacy-maven-plugin/goals.html">
       <f:textbox name="goals" value="${it.userConfiguredGoals}"/>
     </f:entry>
     <f:advanced>
-      <f:entry title="MAVEN_OPTS" help="/plugin/maven-plugin/maven-opts.html">
+      <f:entry title="MAVEN_OPTS" help="/plugin/legacy-maven-plugin/maven-opts.html">
         <f:expandableTextbox name="mavenOpts" value="${it.mavenOpts}" />
       </f:entry>
       <f:entry title="${%Alternate settings file}"
-               help="/plugin/maven-plugin/alternate-settings.html">
+               help="/plugin/legacy-maven-plugin/alternate-settings.html">
         <f:textbox name="alternateSettings"
                    value="${it.alternateSettings}" 
                    checkUrl="'checkFileRelative?value='+escape(this.value)"
@@ -72,15 +72,15 @@
       </f:entry>
       <f:optionalBlock name="maven.incrementalBuild"
                        title="${%Incremental build - only build changed modules}"
-                       help="/plugin/maven-plugin/incremental.html"
+                       help="/plugin/legacy-maven-plugin/incremental.html"
                        checked="${it.isIncrementalBuild()}" />
       <f:optionalBlock name="maven.archivingDisabled"
                        title="${%Disable automatic artifact archiving}"
-                       help="/plugin/maven-plugin/archivingDisabled.html"
+                       help="/plugin/legacy-maven-plugin/archivingDisabled.html"
                        checked="${it.isArchivingDisabled()}" />
-      <f:optionalBlock name="maven.perModuleBuild" title="${%Build modules in parallel}" help="/plugin/maven-plugin/aggregator.html"
+      <f:optionalBlock name="maven.perModuleBuild" title="${%Build modules in parallel}" help="/plugin/legacy-maven-plugin/aggregator.html"
         checked="${!it.aggregatorStyleBuild}" />
-      <f:optionalBlock name="maven.usePrivateRepository" title="${%Use private Maven repository}" help="/plugin/maven-plugin/private-repository.html"
+      <f:optionalBlock name="maven.usePrivateRepository" title="${%Use private Maven repository}" help="/plugin/legacy-maven-plugin/private-repository.html"
         checked="${it.usesPrivateRepository()}" />
       <f:optionalBlock name="maven.resolveDependencies" title="${%Resolve Dependencies during Pom parsing}" 
         checked="${it.isResolveDependencies()}" /> 

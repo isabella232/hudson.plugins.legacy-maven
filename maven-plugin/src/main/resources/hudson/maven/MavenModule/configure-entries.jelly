@@ -23,7 +23,7 @@
   <p:config-trigger />
 
   <f:section title="${%Build}">
-    <f:entry title="${%Goals}" help="/plugin/maven-plugin/module-goals.html">
+    <f:entry title="${%Goals}" help="/plugin/legacy-maven-plugin/module-goals.html">
       <f:textbox name="goals" value="${it.userConfiguredGoals}"/>
     </f:entry>
   </f:section>
